@@ -99,10 +99,16 @@ picolang_DATA = \
     lang/it-IT_cm0_sg.bin \
     lang/it-IT_ta.bin
 
-bin_PROGRAMS = pico2wave
+bin_PROGRAMS = pico2wave pico2wave_quality
 pico2wave_SOURCES = \
 	bin/pico2wave.c
 pico2wave_LDADD = \
 	libttspico.la -lpopt
 pico2wave_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib
+
+pico2wave_quality_SOURCES = \
+	bin/pico2wave_quality.c
+pico2wave_quality_LDADD = \
+	libttspico.la -lpopt
+pico2wave_quality_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib -DPICO_USE_QUALITY_ENHANCE=1
 
