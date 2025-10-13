@@ -111,6 +111,20 @@ The standard command-line tool for text-to-speech conversion:
 pico2wave -l en-US -w output.wav "Your text here"
 ```
 
+## Repository Improvement Recommendations
+
+Looking to contribute or improve the project? Check out our comprehensive analysis:
+
+- **[RECOMMENDATIONS_SUMMARY.md](RECOMMENDATIONS_SUMMARY.md)** - Executive summary of improvement opportunities
+- **[RECOMMENDATIONS.md](RECOMMENDATIONS.md)** - Detailed recommendations with implementation roadmap
+
+These documents provide:
+- Analysis of current repository state
+- Prioritized improvement suggestions
+- Implementation roadmap and timelines
+- Best practices for testing, CI/CD, and documentation
+- Security considerations and modernization opportunities
+
 ## License
 
 License Apache-2.0 (see pico_resources/NOTICE)
