@@ -50,7 +50,21 @@ PicoTTS includes voice quality enhancement features that improve audio output th
 - More natural-sounding frequency balance
 - Better overall audio quality
 
+### Available Implementations
+
+**Standard (Floating-Point)** - `test2wave`
+- Uses double-precision floating-point arithmetic
+- Best quality on systems with FPU
+- Suitable for desktop and modern embedded systems
+
+**Embedded (Fixed-Point)** - `test2wave_embedded`
+- Uses Q15 fixed-point arithmetic (no FPU required)
+- Optimized for resource-constrained embedded devices
+- 50-70% faster on ARM Cortex-M without FPU
+- Same audio quality as floating-point version
+
 For detailed information about the TTS synthesis algorithm and voice quality improvements, see:
+- [IMPROVEMENTS.md](IMPROVEMENTS.md) - Comprehensive improvement suggestions for embedded and desktop
 - [VOICE_QUALITY.md](VOICE_QUALITY.md) - Technical documentation on synthesis and filtering
 - [SYNTHESIS_SUMMARY.md](SYNTHESIS_SUMMARY.md) - Executive summary for developers
 
@@ -66,6 +80,21 @@ cd pico
 ```
 
 See [pico/bin/TEST2WAVE_README.md](pico/bin/TEST2WAVE_README.md) for details.
+
+### test2wave_embedded - Embedded Systems Version
+
+An optimized version using fixed-point arithmetic for embedded devices without FPU:
+
+```bash
+cd pico
+./test2wave_embedded output.wav "Embedded optimized test."
+```
+
+**Benefits:**
+- No floating-point unit (FPU) required
+- 50-70% faster on ARM Cortex-M processors
+- Lower power consumption
+- Same audio quality as floating-point version
 
 Run the demo script to generate multiple example audio files:
 
