@@ -155,6 +155,43 @@ PICO_FUNC picoext_getLastProducedItemType(
         pico_Engine engine
         );
 
+/* *** Extended Resource Loading Functions (for embedded systems) *************/
+
+/**
+   Loads a resource from a memory buffer instead of a file.
+   This is useful for embedded systems that store language data in flash
+   memory or want to use XIP (Execute-In-Place) to avoid copying data to RAM.
+   
+   The memory buffer must contain a complete, valid Pico resource file
+   (same format as .bin files). The buffer must remain valid for the
+   lifetime of the resource.
+   
+   @param system - Pico system handle
+   @param memoryBuffer - Pointer to resource data in memory (must remain valid)
+   @param bufferSize - Size of the resource data in bytes
+   @param resourceName - Name to assign to this resource
+   @param outResource - Pointer to receive the loaded resource handle
+   @return PICO_OK on success, error code otherwise
+   
+   Example usage for ESP32 with embedded language files:
+   @code
+   extern const uint8_t en_us_ta_start[] asm("_binary_en_US_ta_bin_start");
+   extern const uint8_t en_us_ta_end[]   asm("_binary_en_US_ta_bin_end");
+   
+   pico_Resource taRes;
+   picoext_loadResourceFromMemory(system, en_us_ta_start,
+                                  en_us_ta_end - en_us_ta_start,
+                                  "en-US-ta", &taRes);
+   @endcode
+*/
+PICO_FUNC picoext_loadResourceFromMemory(
+        pico_System system,
+        const void *memoryBuffer,
+        const pico_Uint32 bufferSize,
+        const pico_Char *resourceName,
+        pico_Resource *outResource
+        );
+
 #ifdef __cplusplus
 }
 #endif

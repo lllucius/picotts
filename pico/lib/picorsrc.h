@@ -116,6 +116,13 @@ picoos_int16 picoctrl_isValidResourceHandle(picorsrc_Resource resource);
 pico_status_t picorsrc_loadResource(picorsrc_ResourceManager this,
         picoos_char * fileName, picorsrc_Resource * resource);
 
+/* load resource from memory buffer (for XIP/embedded systems).
+ * The memory buffer must contain a complete, valid resource file and remain valid
+ * for the lifetime of the resource. */
+pico_status_t picorsrc_loadResourceFromMemory(picorsrc_ResourceManager this,
+        const picoos_uint8 * memoryBuffer, picoos_uint32 bufferSize,
+        const picoos_char * resourceName, picorsrc_Resource * resource);
+
 /* unload resource file. (warn if resource file is busy) */
 pico_status_t picorsrc_unloadResource(picorsrc_ResourceManager this, picorsrc_Resource * rsrc);
 
