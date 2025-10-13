@@ -69,7 +69,14 @@ extern "C" {
 #define PICOPAM_VECT_SIZE 64+PICOPAM_BREAK_ADD_SIZE /*syllable feature vector size (bytes)*/
 #define PICOPAM_INVEC_SIZE 60           /*phone feature vector size */
 #define PICOPAM_MAX_SYLL_PER_SENT 100   /*maximum number of syllables per sentece*/
-#define PICOPAM_MAX_PH_PER_SENT 400     /*maximum number of phonemes  per sentece*/
+
+/* Phase 1.2 & 1.3: Configurable phoneme buffer for streaming architecture */
+#ifdef PICO_EMBEDDED_STREAMING_MODE
+    #define PICOPAM_MAX_PH_PER_SENT PICO_EMBEDDED_MAX_PH_PER_CHUNK  /* Reduced for streaming (32) */
+#else
+    #define PICOPAM_MAX_PH_PER_SENT 400     /*maximum number of phonemes per sentence*/
+#endif
+
 #define PICOPAM_MAX_ITEM_PER_SENT 255   /*maximum number of attached items per sentence*/
 #define PICOPAM_MAX_ITEM_SIZE_PER_SENT 4096 /*maximum size of attached items per sentence*/
 
