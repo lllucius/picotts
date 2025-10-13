@@ -32,3 +32,6 @@ libttspico.la
 pico2wave
 test2wave
 
+# Demo files
+demo*.wav
+
