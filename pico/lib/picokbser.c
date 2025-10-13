@@ -65,7 +65,7 @@ static pico_status_t writeBytes(picoos_File file, const picoos_uint8 *data,
                                  picoos_uint32 size, picoos_Common common) {
     picoos_uint32 written = size;
     if (!picoos_WriteBytes(file, data, &written) || written != size) {
-        return picoos_emRaiseException(common->em, PICO_EXC_FILE_WRITE_ERROR,
+        return picoos_emRaiseException(common->em, PICO_ERR_OTHER,
                                        NULL, (picoos_char *)"write failed");
     }
     return PICO_OK;
@@ -76,7 +76,7 @@ static pico_status_t readBytes(picoos_File file, picoos_uint8 *data,
                                picoos_uint32 size, picoos_Common common) {
     picoos_uint32 read = size;
     if (!picoos_ReadBytes(file, data, &read) || read != size) {
-        return picoos_emRaiseException(common->em, PICO_EXC_FILE_READ_ERROR,
+        return picoos_emRaiseException(common->em, PICO_ERR_OTHER,
                                        NULL, (picoos_char *)"read failed");
     }
     return PICO_OK;
@@ -112,7 +112,7 @@ pico_status_t picokbser_serializeResource(
     PICODBG_INFO(("picokbser_serializeResource: not implemented"));
     PICODBG_INFO(("use original .bin files with XIP for zero-copy loading"));
     
-    return picoos_emRaiseException(common->em, PICO_ERR_NOT_SUPPORTED,
+    return picoos_emRaiseException(common->em, PICO_ERR_OTHER,
                                    NULL, (picoos_char *)"use XIP/memory-mapping instead");
 }
 
@@ -124,7 +124,7 @@ pico_status_t picokbser_deserializeResource(
     PICODBG_INFO(("deserialization not fully implemented - this is a placeholder"));
     
     /* Not implemented - use standard resource loading with XIP support */
-    return PICO_ERR_NOT_SUPPORTED;
+    return PICO_ERR_OTHER;
 }
 
 picoos_uint8 picokbser_isSerializedFile(

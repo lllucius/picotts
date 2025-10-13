@@ -1021,6 +1021,197 @@ pico_status_t picorsrc_releaseVoice(picorsrc_ResourceManager this, picorsrc_Voic
     return PICO_OK;
 }
 
+
+/* *** Load resource from memory (for embedded/XIP systems) ******************/
+
+/* Helper function to read header from memory buffer */
+static pico_status_t readHeaderFromMemory(
+    picorsrc_ResourceManager this,
+    const picoos_uint8 *memoryBuffer,
+    picoos_uint32 bufferSize,
+    picoos_FileHeader header,
+    picoos_uint32 *headerlen,
+    picoos_uint32 *curpos)
+{
+    picoos_uint16 hdrlen1;
+    pico_status_t status;
+    picoos_uint32 pos = 0;
+
+    /* Read PICO magic header (8 bytes: "SVOXPICO") */
+    if (bufferSize < 8) {
+        return PICO_EXC_FILE_CORRUPT;
+    }
+    
+    /* Simple check for PICO header - just verify it looks reasonable */
+    if (memoryBuffer[0] != 'S' || memoryBuffer[1] != 'V') {
+        return PICO_EXC_FILE_CORRUPT;
+    }
+    pos = 8;
+    *headerlen = 8;
+
+    /* Read header string length */
+    status = picoos_read_mem_pi_uint16(memoryBuffer, &pos, &hdrlen1);
+    if (PICO_OK != status) {
+        return status;
+    }
+    *headerlen += 2;
+
+    if (hdrlen1 > PICOOS_MAX_HEADER_STRING_LEN - 1 || pos + hdrlen1 > bufferSize) {
+        return PICO_EXC_FILE_CORRUPT;
+    }
+
+    /* Copy header string to tmpHeader and parse */
+    picoos_mem_copy(memoryBuffer + pos, this->tmpHeader, hdrlen1);
+    this->tmpHeader[hdrlen1] = NULLC;
+    pos += hdrlen1;
+    *headerlen += hdrlen1;
+
+    status = picoos_hdrParseHeader(header, this->tmpHeader);
+    *curpos = pos;
+    
+    return status;
+}
+
+pico_status_t picorsrc_loadResourceFromMemory(
+    picorsrc_ResourceManager this,
+    const picoos_uint8 *memoryBuffer,
+    picoos_uint32 bufferSize,
+    const picoos_char *resourceName,
+    picorsrc_Resource *resource)
+{
+    picorsrc_Resource res;
+    picoos_uint32 curpos = 0, headerlen;
+    picoos_file_header_t header;
+    pico_status_t status = PICO_OK;
+
+    if (resource == NULL) {
+        return PICO_ERR_NULLPTR_ACCESS;
+    } else {
+        *resource = NULL;
+    }
+
+    if (memoryBuffer == NULL || bufferSize == 0) {
+        return PICO_ERR_NULLPTR_ACCESS;
+    }
+
+    res = picorsrc_newResource(this->common->mm);
+    if (NULL == res) {
+        return picoos_emRaiseException(this->common->em, PICO_EXC_OUT_OF_MEM,
+                                       NULL, NULL);
+    }
+
+    if (PICO_MAX_NUM_RESOURCES <= this->numResources) {
+        picoos_deallocate(this->common->mm, (void *) &res);
+        return picoos_emRaiseException(this->common->em,
+                                       PICO_EXC_MAX_NUM_EXCEED, NULL,
+                                       (picoos_char *)"no more than %i resources",
+                                       PICO_MAX_NUM_RESOURCES);
+    }
+
+    /* ***************** Parse header from memory buffer */
+    
+    status = readHeaderFromMemory(this, memoryBuffer, bufferSize, &header, 
+                                  &headerlen, &curpos);
+    if (PICO_OK != status) {
+        picoos_deallocate(this->common->mm, (void *) &res);
+        return picoos_emRaiseException(this->common->em, status, NULL,
+                                       (picoos_char *)"invalid header");
+    }
+
+    /* ***************** Check if resource already loaded */
+    
+    if (isResourceLoaded(this, header.field[PICOOS_HEADER_NAME].value)) {
+        PICODBG_WARN((">>> lingware '%s' already loaded",
+                      header.field[PICOOS_HEADER_NAME].value));
+        picoos_emRaiseWarning(this->common->em, PICO_WARN_RESOURCE_DOUBLE_LOAD,
+                             NULL, (picoos_char *)"%s",
+                             header.field[PICOOS_HEADER_NAME].value);
+        picoos_deallocate(this->common->mm, (void *) &res);
+        return PICO_WARN_RESOURCE_DOUBLE_LOAD;
+    }
+
+    /* ***************** Get resource data length and point to it */
+    
+    picoos_uint32 len;
+    status = picoos_read_mem_pi_uint32(memoryBuffer, &curpos, &len);
+    if (PICO_OK != status || curpos + len > bufferSize) {
+        picoos_deallocate(this->common->mm, (void *) &res);
+        return picoos_emRaiseException(this->common->em, PICO_EXC_FILE_CORRUPT,
+                                       NULL, (picoos_char *)"invalid data length");
+    }
+
+    PICODBG_DEBUG(("found net resource len of %i", len));
+
+    /* Point directly to the data in memory (zero-copy for XIP) */
+    /* Note: The memory buffer must remain valid for the resource lifetime */
+    res->raw_mem = NULL;  /* We don't own this memory */
+    res->start = (picoos_uint8 *)(memoryBuffer + curpos);
+    
+    /* Note: normally we'd allocate and copy, but for XIP we use the buffer directly.
+     * This means the caller MUST ensure the buffer remains valid. */
+
+    /* ***************** Set resource name */
+    
+    if (resourceName != NULL && resourceName[0] != NULLC) {
+        /* Use provided name */
+        if (picoos_strlcpy(res->name, resourceName, PICORSRC_MAX_RSRC_NAME_SIZ) >=
+            PICORSRC_MAX_RSRC_NAME_SIZ) {
+            picoos_deallocate(this->common->mm, (void *) &res);
+            return picoos_emRaiseException(this->common->em,
+                                           PICO_ERR_INDEX_OUT_OF_RANGE, NULL,
+                                           (picoos_char *)"name too long");
+        }
+    } else {
+        /* Use name from header */
+        if (picoos_strlcpy(res->name, header.field[PICOOS_HEADER_NAME].value,
+                          PICORSRC_MAX_RSRC_NAME_SIZ) >= PICORSRC_MAX_RSRC_NAME_SIZ) {
+            picoos_deallocate(this->common->mm, (void *) &res);
+            return picoos_emRaiseException(this->common->em,
+                                           PICO_ERR_INDEX_OUT_OF_RANGE, NULL,
+                                           (picoos_char *)"name too long");
+        }
+    }
+    PICODBG_DEBUG(("assigned name %s to resource", res->name));
+
+    /* ***************** Get resource type */
+    
+    if (!picoos_strcmp(header.field[PICOOS_HEADER_CONTENT_TYPE].value,
+                       PICORSRC_FIELD_VALUE_TEXTANA)) {
+        res->type = PICORSRC_TYPE_TEXTANA;
+    } else if (!picoos_strcmp(header.field[PICOOS_HEADER_CONTENT_TYPE].value,
+                             PICORSRC_FIELD_VALUE_SIGGEN)) {
+        res->type = PICORSRC_TYPE_SIGGEN;
+    } else if (!picoos_strcmp(header.field[PICOOS_HEADER_CONTENT_TYPE].value,
+                             PICORSRC_FIELD_VALUE_USERLEX)) {
+        res->type = PICORSRC_TYPE_USER_LEX;
+    } else if (!picoos_strcmp(header.field[PICOOS_HEADER_CONTENT_TYPE].value,
+                             PICORSRC_FIELD_VALUE_USERTPP)) {
+        res->type = PICORSRC_TYPE_USER_PREPROC;
+    } else {
+        res->type = PICORSRC_TYPE_OTHER;
+    }
+
+    /* ***************** Create knowledge bases from resource data */
+    
+    status = picorsrc_getKbList(this, res->start, len, &res->kbList);
+    if (PICO_OK != status) {
+        PICODBG_ERROR(("problem creating kb list"));
+        picoos_deallocate(this->common->mm, (void *) &res);
+        return status;
+    }
+
+    /* ***************** Add to resource list */
+    
+    res->next = this->resources;
+    this->resources = res;
+    this->numResources++;
+    *resource = res;
+
+    PICODBG_INFO(("loaded resource from memory: %s", res->name));
+    return PICO_OK;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

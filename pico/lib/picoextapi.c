@@ -32,6 +32,7 @@
 #include "picoapi.h"
 #include "picoextapi.h"
 #include "picoapid.h"
+#include "picorsrc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -220,6 +221,36 @@ PICO_FUNC picoext_getLastProducedItemType(
     status = picoctrl_getLastProducedItemType((picoctrl_Engine) engine);
     return status;
 }
+
+
+/* *** Extended Resource Loading Functions ************************************/
+
+PICO_FUNC picoext_loadResourceFromMemory(
+        pico_System system,
+        const void *memoryBuffer,
+        const pico_Uint32 bufferSize,
+        const pico_Char *resourceName,
+        pico_Resource *outResource
+        )
+{
+    pico_Status status = PICO_OK;
+
+    if (!is_valid_system_handle(system)) {
+        status = PICO_ERR_INVALID_HANDLE;
+    } else if ((memoryBuffer == NULL) || (bufferSize == 0) || (outResource == NULL)) {
+        status = PICO_ERR_NULLPTR_ACCESS;
+    } else {
+        picoos_emReset(system->common->em);
+        status = picorsrc_loadResourceFromMemory(system->rm,
+                                                 memoryBuffer,
+                                                 bufferSize,
+                                                 resourceName,
+                                                 (picorsrc_Resource *) outResource);
+    }
+
+    return status;
+}
+
 
 #ifdef __cplusplus
 }

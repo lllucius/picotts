@@ -186,7 +186,7 @@ PICO_FUNC picoext_getLastProducedItemType(
 */
 PICO_FUNC picoext_loadResourceFromMemory(
         pico_System system,
-        const pico_Uint8 *memoryBuffer,
+        const void *memoryBuffer,
         const pico_Uint32 bufferSize,
         const pico_Char *resourceName,
         pico_Resource *outResource

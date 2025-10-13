@@ -36,7 +36,8 @@ libttspico_la_SOURCES = \
 	lib/picofixedpoint.c \
 	lib/picodtcache.c \
 	lib/picofft.c \
-	lib/picoqualityenhance.c
+	lib/picoqualityenhance.c \
+	lib/picokbser.c
 
 # Note: ESP32 support file (lib/pico_esp32.c) requires ESP-IDF and should be
 # compiled separately in ESP32 projects. It's not included in the standard build.
@@ -80,7 +81,8 @@ libttspico_la_HEADERS = \
     lib/picofixedpoint.h \
     lib/picodtcache.h \
     lib/picofft.h \
-    lib/picoqualityenhance.h
+    lib/picoqualityenhance.h \
+    lib/picokbser.h
 
 libttspico_la_LIBADD = -lm
 
