@@ -35,7 +35,8 @@ libttspico_la_SOURCES = \
 	lib/picowa.c \
 	lib/picofixedpoint.c \
 	lib/picodtcache.c \
-	lib/picofft.c
+	lib/picofft.c \
+	lib/picoqualityenhance.c
 
 # Note: ESP32 support file (lib/pico_esp32.c) requires ESP-IDF and should be
 # compiled separately in ESP32 projects. It's not included in the standard build.
@@ -78,7 +79,8 @@ libttspico_la_HEADERS = \
     lib/picowa.h \
     lib/picofixedpoint.h \
     lib/picodtcache.h \
-    lib/picofft.h
+    lib/picofft.h \
+    lib/picoqualityenhance.h
 
 libttspico_la_LIBADD = -lm
 
@@ -97,10 +99,16 @@ picolang_DATA = \
     lang/it-IT_cm0_sg.bin \
     lang/it-IT_ta.bin
 
-bin_PROGRAMS = pico2wave
+bin_PROGRAMS = pico2wave pico2wave_quality
 pico2wave_SOURCES = \
 	bin/pico2wave.c
 pico2wave_LDADD = \
 	libttspico.la -lpopt
 pico2wave_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib
+
+pico2wave_quality_SOURCES = \
+	bin/pico2wave_quality.c
+pico2wave_quality_LDADD = \
+	libttspico.la -lpopt
+pico2wave_quality_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib -DPICO_USE_QUALITY_ENHANCE=1
 
