@@ -167,18 +167,164 @@ picoos_uint8 pico_fft_inverse(pico_fft_context_t *context,
 
 #ifdef PICO_FFT_USE_ESP_DSP
 
-/* ESP-DSP implementation would go here */
-/* This provides 40-60% speedup on ESP32 */
+#include "esp_dsp.h"
 
+/**
+ * Initialize FFT context (ESP-DSP optimized)
+ * 
+ * ESP-DSP provides hardware-accelerated FFT on ESP32.
+ * This implementation provides 40-60% speedup compared to generic FFT.
+ */
 picoos_uint8 pico_fft_initialize(picoos_MemoryManager mm,
                                  picoos_uint16 fft_size,
                                  pico_fft_context_t **context) {
-    /* ESP-DSP specific initialization */
-    /* Initialize twiddle factors, etc. */
+    pico_fft_context_t *ctx;
+    esp_err_t ret;
+    
+    if (context == NULL) {
+        return PICO_ERR_NULLPTR_ACCESS;
+    }
+    
+    /* Validate FFT size */
+    if (fft_size != PICO_FFT_SIZE_256 && fft_size != PICO_FFT_SIZE_512) {
+        return PICO_ERR_OTHER;
+    }
+    
+    /* Allocate context */
+    ctx = (pico_fft_context_t *)picoos_allocate(mm, sizeof(pico_fft_context_t));
+    if (ctx == NULL) {
+        return PICO_EXC_OUT_OF_MEM;
+    }
+    
+    ctx->fft_size = fft_size;
+    ctx->initialized = 1;
+    
+    /* Initialize ESP-DSP FFT tables
+     * This pre-computes twiddle factors for the FFT */
+    ret = dsps_fft2r_init_fc32(NULL, fft_size);
+    if (ret != ESP_OK) {
+        picoos_deallocate(mm, (void **)&ctx);
+        return PICO_ERR_OTHER;
+    }
+    
+    /* Allocate temporary buffer for ESP-DSP (needs complex data) */
+    ctx->reserved = picoos_allocate(mm, fft_size * 2 * sizeof(float));
+    if (ctx->reserved == NULL) {
+        dsps_fft2r_deinit_fc32();
+        picoos_deallocate(mm, (void **)&ctx);
+        return PICO_EXC_OUT_OF_MEM;
+    }
+    
+    *context = ctx;
     return PICO_OK;
 }
 
-/* ... ESP-DSP forward/inverse implementations ... */
+/**
+ * Deallocate FFT context (ESP-DSP optimized)
+ */
+void pico_fft_deallocate(picoos_MemoryManager mm,
+                         pico_fft_context_t **context) {
+    if (context && *context) {
+        if ((*context)->reserved) {
+            picoos_deallocate(mm, &((*context)->reserved));
+        }
+        dsps_fft2r_deinit_fc32();
+        picoos_deallocate(mm, (void **)context);
+    }
+}
+
+/**
+ * Forward FFT (ESP-DSP optimized)
+ * 
+ * Uses ESP32 DSP library for hardware acceleration.
+ * Input: real signal
+ * Output: real and imaginary components
+ */
+picoos_uint8 pico_fft_forward(pico_fft_context_t *context,
+                              float *real,
+                              float *imag) {
+    if (!pico_fft_is_valid(context) || real == NULL) {
+        return PICO_ERR_NULLPTR_ACCESS;
+    }
+    
+    picoos_uint16 n = context->fft_size;
+    float *fft_data = (float *)context->reserved;
+    
+    /* Pack input into complex format (real, imag, real, imag, ...) */
+    for (picoos_uint16 i = 0; i < n; i++) {
+        fft_data[2*i] = real[i];      /* Real part */
+        fft_data[2*i+1] = 0.0f;       /* Imaginary part (zero for real input) */
+    }
+    
+    /* Bit-reverse permutation (required by ESP-DSP) */
+    dsps_bit_rev_fc32(fft_data, n);
+    
+    /* Perform FFT using ESP-DSP (hardware accelerated) */
+    dsps_fft2r_fc32(fft_data, n);
+    
+    /* Unpack output: ESP-DSP produces complex data */
+    for (picoos_uint16 i = 0; i < n; i++) {
+        real[i] = fft_data[2*i];      /* Real part */
+        imag[i] = fft_data[2*i+1];    /* Imaginary part */
+    }
+    
+    return PICO_OK;
+}
+
+/**
+ * Inverse FFT (ESP-DSP optimized)
+ * 
+ * Uses ESP32 DSP library for hardware acceleration.
+ * Input: real and imaginary components
+ * Output: real signal
+ */
+picoos_uint8 pico_fft_inverse(pico_fft_context_t *context,
+                              float *real,
+                              float *imag) {
+    if (!pico_fft_is_valid(context) || real == NULL) {
+        return PICO_ERR_NULLPTR_ACCESS;
+    }
+    
+    picoos_uint16 n = context->fft_size;
+    float *fft_data = (float *)context->reserved;
+    
+    /* Pack input into complex format */
+    for (picoos_uint16 i = 0; i < n; i++) {
+        fft_data[2*i] = real[i];      /* Real part */
+        fft_data[2*i+1] = imag ? imag[i] : 0.0f;  /* Imaginary part */
+    }
+    
+    /* Bit-reverse permutation */
+    dsps_bit_rev_fc32(fft_data, n);
+    
+    /* Perform inverse FFT using ESP-DSP
+     * For inverse, we use the forward FFT with conjugated input,
+     * then conjugate and scale the output */
+    
+    /* Conjugate input (negate imaginary parts) */
+    for (picoos_uint16 i = 0; i < n; i++) {
+        fft_data[2*i+1] = -fft_data[2*i+1];
+    }
+    
+    /* Perform FFT */
+    dsps_fft2r_fc32(fft_data, n);
+    
+    /* Conjugate output and scale by 1/N */
+    float scale = 1.0f / n;
+    for (picoos_uint16 i = 0; i < n; i++) {
+        real[i] = fft_data[2*i] * scale;
+        fft_data[2*i+1] = -fft_data[2*i+1] * scale;
+    }
+    
+    /* Copy imaginary part if needed */
+    if (imag) {
+        for (picoos_uint16 i = 0; i < n; i++) {
+            imag[i] = fft_data[2*i+1];
+        }
+    }
+    
+    return PICO_OK;
+}
 
 #endif /* PICO_FFT_USE_ESP_DSP */
 
