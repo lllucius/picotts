@@ -273,6 +273,13 @@ Read all documents in order:
 - [ ] Add power management
 - [ ] Final testing and optimization
 
+### Phase 3: Quality Improvements (Week 7-9)
+- [ ] Enable quality enhancement module
+- [ ] Implement improved excitation generation
+- [ ] Add voice customization API
+- [ ] Configure quality mode presets
+- [ ] Test and validate quality improvements
+
 ### Phase 4: Enhanced Features (Week 10-16, optional)
 - [ ] Implement knowledge base compression
 - [ ] Add higher sample rate support
@@ -310,6 +317,10 @@ Read all documents in order:
 - Original PicoTTS source code: `pico/` directory
 - Language resources: `pico_resources/` directory
 - Build system: `pico/Makefile.am`, `pico/configure.in`
+- **Phase 1:** `PHASE1_IMPLEMENTATION.md`, `PHASE1_SUMMARY.md`
+- **Phase 2:** `PHASE2_IMPLEMENTATION.md`, `PHASE2_SUMMARY.md`
+- **Phase 3:** `PHASE3_QUALITY_IMPROVEMENTS.md`
+- **Examples:** `pico/examples/quality_example.c`
 
 ### External Resources
 - ESP-IDF Documentation: https://docs.espressif.com/projects/esp-idf/
