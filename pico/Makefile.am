@@ -34,6 +34,9 @@ libttspico_la_SOURCES = \
 	lib/picotrns.c \
 	lib/picowa.c
 
+# Note: ESP32 support file (lib/pico_esp32.c) requires ESP-IDF and should be
+# compiled separately in ESP32 projects. It's not included in the standard build.
+
 libttspico_ladir = $(includedir)
 libttspico_la_HEADERS = \
     lib/picoacph.h \
@@ -46,6 +49,7 @@ libttspico_la_HEADERS = \
     lib/picodbg.h \
     lib/picodefs.h \
     lib/picodsp.h \
+    lib/picoembedded.h \
     lib/picoextapi.h \
     lib/picofftsg.h \
     lib/picokdbg.h \

@@ -32,6 +32,9 @@
 #include "picokfst.h"
 #include "picorsrc.h"
 
+/* Phase 1 optimization: Include embedded system configuration */
+#include "picoembedded.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -438,19 +441,38 @@ picoos_uint8 picodata_is_valid_itemhead(const picodata_itemhead_t *head);
 
 #define PICODATA_MAX_ITEMSIZE (picoos_uint16) (PICODATA_ITEM_HEADSIZE + 256)
 
-/* different buffer sizes per processing unit */
-#define PICODATA_BUFSIZE_DEFAULT (picoos_uint16) PICODATA_MAX_ITEMSIZE
-#define PICODATA_BUFSIZE_TEXT    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_TOK     (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_PR      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_WA      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_SA      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_ACPH    (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_SPHO    (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_PAM     (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_CEP     (picoos_uint16) 16 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_SIG     (picoos_uint16) 16 * PICODATA_BUFSIZE_DEFAULT
-#define PICODATA_BUFSIZE_SINK     (picoos_uint16) 1 * PICODATA_BUFSIZE_DEFAULT
+/* different buffer sizes per processing unit 
+ * Phase 1.3: Configurable for embedded systems (streaming architecture)
+ */
+#ifdef PICO_EMBEDDED_PLATFORM
+    /* Reduced buffer sizes for embedded systems (4x smaller) */
+    #define PICODATA_BUFSIZE_DEFAULT (picoos_uint16) PICODATA_MAX_ITEMSIZE
+    #define PICODATA_BUFSIZE_TEXT    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_TOK     (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_PR      (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_WA      (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SA      (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_ACPH    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SPHO    (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_PAM     (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_CEP     (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SIG     (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SINK    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+#else
+    /* Standard buffer sizes for desktop/server */
+    #define PICODATA_BUFSIZE_DEFAULT (picoos_uint16) PICODATA_MAX_ITEMSIZE
+    #define PICODATA_BUFSIZE_TEXT    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_TOK     (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_PR      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_WA      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SA      (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_ACPH    (picoos_uint16)  2 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SPHO    (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_PAM     (picoos_uint16)  4 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_CEP     (picoos_uint16) 16 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SIG     (picoos_uint16) 16 * PICODATA_BUFSIZE_DEFAULT
+    #define PICODATA_BUFSIZE_SINK    (picoos_uint16)  1 * PICODATA_BUFSIZE_DEFAULT
+#endif
 
 /* different types of processing units */
 typedef enum picodata_putype {
