@@ -87,10 +87,16 @@ picolang_DATA = \
     lang/it-IT_cm0_sg.bin \
     lang/it-IT_ta.bin
 
-bin_PROGRAMS = pico2wave
+bin_PROGRAMS = pico2wave test2wave
 pico2wave_SOURCES = \
 	bin/pico2wave.c
 pico2wave_LDADD = \
 	libttspico.la -lpopt
 pico2wave_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib
+
+test2wave_SOURCES = \
+	bin/test2wave.c
+test2wave_LDADD = \
+	libttspico.la -lm
+test2wave_CFLAGS = -Wall -Dpicolangdir=\"$(picolangdir)\" -I lib
 

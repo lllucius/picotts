@@ -30,4 +30,5 @@ libtool
 .libs
 libttspico.la
 pico2wave
+test2wave
 
