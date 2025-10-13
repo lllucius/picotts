@@ -370,12 +370,45 @@ void applyNoiseGate(NoiseGate *gate, int16_t* buffer, size_t sampleCount) {
 2. Test fixed-point vs floating-point quality differences
 3. Verify graceful fallback when optimizations unavailable
 
+## 10. Improved Quantization for More Natural Speech
+
+**Problem**: The original hard-coded quantization parameters caused robotic-sounding speech with elongated phonemes.
+
+**Solution**: Reduce quantization step sizes for both duration and pitch (F0) to allow more natural variation.
+
+**Implementation**: Modified quantization parameters in `picopam.c`:
+
+```c
+// Original values (too coarse):
+f0quant = 30.0f;      // Pitch quantized to 30Hz steps
+durquant1 = 20.0f;    // Short durations to 20ms steps
+durquant2 = 100.0f;   // Long durations to 100ms steps
+
+// Improved values (more natural):
+f0quant = 10.0f;      // Pitch quantized to 10Hz steps (3x finer)
+durquant1 = 5.0f;     // Short durations to 5ms steps (4x finer)
+durquant2 = 20.0f;    // Long durations to 20ms steps (5x finer)
+```
+
+**Benefits**:
+- More natural-sounding intonation with finer pitch control
+- Reduced elongation artifacts (e.g., "equal" no longer sounds like "eeequuuuaaaal")
+- Smoother phoneme transitions
+- Less robotic, more human-like prosody
+- No computational overhead (same algorithm, just different parameters)
+
+**Trade-offs**:
+- Minimal increase in output data variability (not a concern for modern systems)
+- Negligible impact on performance
+
+This improvement is universally applicable to all platforms (embedded and desktop) as it doesn't change the computational complexity, only the precision of the output.
+
 ## Conclusion
 
 These improvements provide a path to better performance and quality across both embedded devices and desktop systems:
 
 - **Embedded focus**: Fixed-point arithmetic, memory optimization, minimal overhead
 - **Desktop focus**: SIMD acceleration, quality enhancements, optional features
-- **Universal**: Smart runtime selection, quality presets, modular design
+- **Universal**: Smart runtime selection, quality presets, modular design, improved quantization
 
 All improvements can be implemented incrementally, allowing gradual adoption and testing.

@@ -243,3 +243,54 @@ Magnitude (dB)
 ```
 
 The low-shelf filter attenuates frequencies below 1100 Hz while boosting the overall level, resulting in improved clarity and perceived loudness.
+
+## Duration and Pitch Quantization Improvements
+
+### Problem
+
+The original PicoTTS implementation used coarse quantization for both phoneme duration and pitch (F0):
+
+- **Duration quantization**: 20ms steps for short durations, 100ms for long durations
+- **Pitch quantization**: 30Hz steps
+
+This resulted in robotic-sounding speech with artifacts such as:
+- Unnaturally elongated phonemes (e.g., "equal" sounding like "eeequuuuaaaal")
+- Stepped, unnatural intonation patterns
+- Overly mechanical prosody
+
+### Solution
+
+The quantization parameters have been refined to allow more natural variation (in `picopam.c`):
+
+```c
+f0quant = 10.0f;      // Reduced from 30.0f (3x finer pitch control)
+durquant1 = 5.0f;     // Reduced from 20.0f (4x finer timing)
+durquant2 = 20.0f;    // Reduced from 100.0f (5x finer timing)
+```
+
+### Benefits
+
+1. **More natural intonation**: 10Hz pitch steps allow smoother F0 contours
+2. **Better timing**: 5ms and 20ms duration steps eliminate elongation artifacts
+3. **Improved prosody**: More human-like rhythm and stress patterns
+4. **No performance impact**: Same computational complexity, just different parameters
+5. **Universal improvement**: Works on all platforms (embedded and desktop)
+
+### Technical Details
+
+The quantization process in `pam_update_vector()`:
+
+```c
+// Duration quantization
+fDur = (picoos_single) pam->phonDur;
+fDur = f_round(fDur / durquant1) * durquant1;  // Round to nearest multiple
+if (fDur > maxdur1) {
+    fDur = f_round(fDur / durquant2) * durquant2;  // Use coarser steps for longer durations
+}
+
+// Pitch quantization  
+f0avg = f_round(f0avg / f0quant) * f0quant;  // Round to nearest multiple
+```
+
+The improved parameters maintain quantization (for data compression benefits) while providing sufficient resolution for natural-sounding speech.
+

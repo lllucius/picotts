@@ -6,19 +6,36 @@ This guide helps you quickly understand and use the voice quality improvements a
 
 ## What Are Voice Quality Improvements?
 
-Voice quality improvements in PicoTTS use a **low-shelf equalization filter** that:
+Voice quality improvements in PicoTTS include:
+
+### 1. Low-Shelf Equalization Filter
+
+The filter enhances audio output through frequency-domain processing:
 
 1. **Reduces excessive low-frequency energy** - The raw TTS output has too much bass, making it sound muddy
 2. **Increases overall volume** - After removing the excess bass, we can safely amplify the signal
 3. **Improves clarity** - Better frequency balance makes speech easier to understand
 4. **Maintains naturalness** - The filter is carefully tuned to sound natural
 
-### The Technical Details (Simplified)
-
+**Technical Details:**
 - **Filter Type**: Low-shelf filter (reduces bass frequencies)
 - **What it does**: Cuts bass by 18 dB below 1100 Hz, then amplifies everything by 5.5x
 - **CPU Cost**: Very low (~5-10% overhead)
 - **Sound Quality**: Professional-grade (THD < 0.1%)
+
+### 2. Improved Quantization Parameters
+
+The synthesis engine now uses finer quantization steps for more natural speech:
+
+1. **Smoother intonation** - Pitch (F0) quantized to 10Hz steps instead of 30Hz (3x finer)
+2. **Better timing** - Duration quantized to 5ms/20ms steps instead of 20ms/100ms (4-5x finer)
+3. **Reduced artifacts** - Eliminates elongated phonemes (e.g., "equal" no longer sounds like "eeequuuuaaaal")
+4. **More natural prosody** - Human-like rhythm and stress patterns
+
+**Technical Details:**
+- **Impact**: No performance overhead, just more natural output
+- **Universality**: Works on all platforms (embedded and desktop)
+- **Implementation**: Modified quantization in picopam.c
 
 ## How to Use It
 

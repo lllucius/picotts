@@ -1540,12 +1540,12 @@ static pico_status_t pam_update_vector(register picodata_ProcessingUnit this)
      Hard coded parameters for quantization
      */
     numstates = PICOPAM_NRSTPF;
-    f0quant = 30.0f;
+    f0quant = 10.0f;  /* Reduced from 30.0f for smoother intonation */
     minf0 = 90.0f;
     maxf0 = 360.0f;
 
-    durquant1 = 20.0f;
-    durquant2 = 100.0f;
+    durquant1 = 5.0f;   /* Reduced from 20.0f for more natural timing */
+    durquant2 = 20.0f;  /* Reduced from 100.0f for more natural timing */
     mindur = 40.0f;
     maxdur1 = 160.0f;
     maxdur2 = 600.0f;
